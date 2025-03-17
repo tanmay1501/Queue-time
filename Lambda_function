@@ -1,1 +1,81 @@
+import json
+import requests
+import boto3
+from datetime import datetime
+import pandas as pd
+from io import StringIO
+
+# Define S3 bucket name
+
+
+S3_BUCKET = "queue-times-raw-data-tanmay"
+
+
+def lambda_handler(event, context):
+    # Define S3 client
+    s3 = boto3.client('s3')
+
+    # Define S3 bucket and file name (Modify this accordingly)
+    bucket_name = S3_BUCKET
+    file_key = "park_list/us_park_id.csv"
+
+
+    # Fetch the file from S3
+    obj = s3.get_object(Bucket=bucket_name, Key=file_key)
+    csv_data = obj['Body'].read().decode('utf-8')  # Read and decode bytes
+
+    # Convert CSV to Pandas DataFrame
+    df = pd.read_csv(StringIO(csv_data))
+
+    # return {
+    #     'statusCode': 200,
+    #     'body': json.dumps(f"Successfully loaded {len(df)} rows from {file_key}")
+    # }
+
+
+
+    parks_URL = "https://queue-times.com/parks.json"
+       
+
+    # Fetch data from API
+    # response = requests.get(parks_URL)
+    # if response.status_code != 200:
+    #     return {"statusCode": response.status_code, "body": "API request failed"}
+    
+    # # park_data = response.json()
+    # # naming filename for  park  and rides
+    # file_name = f"raw-data/parks.json"
+    # s3.put_object(Bucket=S3_BUCKET, Key=file_name, Body=json.dumps(park_data))
+
+
+    response = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix="raw_data/")
+
+    
+    if "Contents" in response:
+        objects_to_delete = [{"Key": obj["Key"]} for obj in response["Contents"]]
+        s3.delete_objects(Bucket=S3_BUCKET, Delete={"Objects": objects_to_delete})
+        print(f"Deleted {len(objects_to_delete)} objects.")
+    else:
+        print("No objects found in the bucket.")
+
+
+    count = 0
+    for i in range(0,65):
+        park_id = df['PARK_ID'][i]
+        rides_URL = f"https://queue-times.com/parks/{park_id}/queue_times.json"
+        count += 1
+        response = requests.get(rides_URL)
+        if response.status_code != 200:
+            return {"statusCode": response.status_code, "body": f"API request failed at{park_id}"}
+        # Upload raw JSON data to S3
+        ride_data = response.json()
+        
+        cur_time = datetime.utcnow().isoformat()
+        file_name = f"raw_data/rides_{cur_time}_{park_id}.json"
+        s3.put_object(Bucket=S3_BUCKET, Key=file_name, Body=json.dumps(ride_data))
+    
+
+    return {"statusCode": 200, "body": f"Data stored in S3: {count}"}
+
+    
 
