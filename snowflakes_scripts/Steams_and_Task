@@ -1,0 +1,26 @@
+USE ROLE accountadmin;
+USE WAREHOUSE compute_wh;
+Use DATABASE park_queue;
+Use schema parks;
+
+-- creating AWS S3 integration
+
+CREATE OR REPLACE STORAGE INTEGRATION s3_integration
+TYPE = EXTERNAL_STAGE
+STORAGE_PROVIDER = 'S3'
+ENABLED = TRUE
+STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::992382423552:role/Snowflakes_access'
+STORAGE_ALLOWED_LOCATIONS = ('s3://queue-times-raw-data-tanmay/');
+
+
+  DESC STORAGE INTEGRATION s3_integration;
+  
+
+-- Creating External stage 
+  
+create or replace stage queue_data_s3
+url ="s3://queue-times-raw-data-tanmay/raw_data/"
+storage_integration = s3_integration;
+
+
+list @queue_data_s3;

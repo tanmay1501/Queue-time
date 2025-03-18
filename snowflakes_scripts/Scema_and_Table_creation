@@ -1,0 +1,66 @@
+USE ROLE accountadmin;
+USE WAREHOUSE compute_wh;
+Use DATABASE park_queue;
+Use schema parks;
+
+
+--creating Stream to check on insert only operation on landing table
+
+CREATE or replace  STREAM ride_stream ON TABLE landing_table
+APPEND_ONLY = TRUE ;
+
+
+
+-- creating task for merging the transformed and updated data from stream
+
+CREATE or replace TASK rides_task  WAREHOUSE = compute_wh
+  WHEN system$stream_has_data('ride_stream')
+  AS    
+MERGE INTO rides_transform AS target
+USING (
+    -- Combine both sources into one unified dataset
+    SELECT 
+        t.park_id AS park_id,
+        rides.value:id AS ride_id,
+        rides.value:name AS ride_name,
+        rides.value:is_open AS is_open,
+        rides.value:last_updated AS last_updated,
+        rides.value:wait_time AS wait_time
+    FROM ride_stream t,
+    LATERAL FLATTEN(input => $1:lands) lands,
+    LATERAL FLATTEN(input => lands.value:rides) rides
+
+    UNION ALL
+
+    SELECT 
+        t.park_id AS park_id,
+        rides.value:id AS ride_id,
+        rides.value:name AS ride_name,
+        rides.value:is_open AS is_open,
+        rides.value:last_updated AS last_updated,
+        rides.value:wait_time AS wait_time
+    FROM ride_stream t,
+    LATERAL FLATTEN(input => $1:rides) rides
+) AS source
+ON target.park_id = source.park_id AND target.ride_id = source.ride_id
+WHEN MATCHED THEN
+    UPDATE SET 
+        target.ride_name = source.ride_name,
+        target.is_open = source.is_open,
+        target.last_updated = source.last_updated,
+        target.wait_time = source.wait_time
+WHEN NOT MATCHED THEN
+    INSERT (park_id, ride_id, ride_name, is_open, last_updated, wait_time)
+    VALUES (source.park_id, source.ride_id, source.ride_name, source.is_open, source.last_updated, source.wait_time);
+
+
+
+--resuming the rides_task
+
+ALTER TASK rides_task Resume;
+
+
+
+
+
+

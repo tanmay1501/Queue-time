@@ -1,0 +1,44 @@
+
+-- Query to get the list of rides with their status and wait time for a specific park
+
+select ride_name, CASE WHEN is_open = TRUE THEN 'Open' ELSE 'Close' END AS status, wait_time 
+from rides_transform r
+join parks_clean p
+on p.park_id =r.park_id
+where park_name = :park
+order by wait_time
+
+
+-- Query to get the nearest list of parks with their distance in miles from a specific zip code
+
+select * from parks_clean;
+
+WITH distances AS (
+    SELECT 
+        park_name,
+        
+        -- Haversine formula to compute distance in kilometers
+        6371 * ACOS(
+            COS(RADIANS(select latitude from zip_code where postal_code = :zipcode)) * COS(RADIANS(PARK_LAT)) * 
+            COS(RADIANS(PARK_LONG) - RADIANS(select longitude from zip_code where postal_code = :zipcode)) +
+            SIN(RADIANS(select latitude from zip_code where postal_code = :zipcode)) * SIN(RADIANS(PARK_LAT))
+        ) AS distance_km
+
+    FROM parks_clean
+)
+
+SELECT park_name, ROUND(distance_km*0.621371, 0) distance_miles 
+FROM distances
+ORDER BY distance_km
+LIMIT 5;
+
+
+-- Query to get the top 10 parks with number of rides  across all parks
+
+select p.park_name, count(ride_id) as number_of_rides 
+from rides_transform r 
+join parks_clean p 
+on p.park_id = r.park_id
+group by p.park_name
+order by number_of_rides desc
+limit 10;
