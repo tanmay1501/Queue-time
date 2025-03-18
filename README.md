@@ -1,5 +1,8 @@
 # 🎢 Real-Time Amusement Park Wait Times ETL Pipeline  
 
+![Flow Chart](https://github.com/tanmay1501/Queue-time/blob/main/Data-flow.png)
+
+![Dashboard](https://github.com/tanmay1501/Queue-time/blob/main/Dashboard.png)
 ## 📌 Project Overview  
 This project builds an **end-to-end ETL pipeline** that automates the collection, transformation, and visualization of **real-time ride wait times** from **65 amusement parks across the USA**. It leverages **AWS Lambda, S3, Snowflake, and Streamlit** to provide continuously updated insights every **5 minutes**.  
 
