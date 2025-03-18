@@ -39,6 +39,5 @@ This project builds an **end-to-end ETL pipeline** that automates the collection
  ┣ 📂 lambda_function/         # AWS Lambda function for API calls  
  ┣ 📂 data/                    # Sample JSON data  
  ┣ 📂 snowflake_scripts/       # SQL scripts for data transformation  
- ┣ 📂 streamlit_dashboard/     # Streamlit app code  
- ┣ 📜 requirements.txt         # Dependencies for Streamlit & Snowflake  
+ ┣ 📂 dashboard/               # Streamlit app code  
  ┣ 📜 README.md                # Project Documentation  
