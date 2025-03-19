@@ -10,7 +10,7 @@ TYPE = EXTERNAL_STAGE
 STORAGE_PROVIDER = 'S3'
 ENABLED = TRUE
 STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::992382423552:role/Snowflakes_access'
-STORAGE_ALLOWED_LOCATIONS = ('s3://queue-times-raw-data-tanmay/');
+STORAGE_ALLOWED_LOCATIONS = ('s3://your-s3-bucket/');
 
 
   DESC STORAGE INTEGRATION s3_integration;
@@ -19,7 +19,7 @@ STORAGE_ALLOWED_LOCATIONS = ('s3://queue-times-raw-data-tanmay/');
 -- Creating External stage 
   
 create or replace stage queue_data_s3
-url ="s3://queue-times-raw-data-tanmay/raw_data/"
+url ="s3://bucket-name/raw_data/"
 storage_integration = s3_integration;
 
 
